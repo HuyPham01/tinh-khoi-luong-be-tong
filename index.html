@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <!-- Basic SEO -->
+  <title>Tính Khối Lượng Bê Tông Móng, Sàn, Dầm Online - Miễn Phí, Chính Xác</title>
+  <meta name="description" content="Công cụ phần mềm tính toán tự động khối lượng bê tông cần đổ cho sàn, sảnh và dầm. Hỗ trợ nhập liệu linh hoạt (m/cm), quy đổi ra tấn và xuất PDF miễn phí." />
+  <meta name="keywords" content="tính khối lượng bê tông, phần mềm tính bê tông, tính toán bê tông online, công thức tính thể tích dầm sàn, xây dựng, công cụ kỹ sư" />
+  <meta name="author" content="Construction Tools" />
+  <meta name="robots" content="index, follow" />
+  <meta name="language" content="Vietnamese" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Công Cụ Tính Khối Lượng Bê Tông Dầm, Sàn Online" />
+  <meta property="og:description" content="Phần mềm tính thể tích và khối lượng bê tông xây dựng nhanh chóng, chính xác. Hỗ trợ quy đổi đơn vị và hiển thị công thức trực quan." />
+  <meta property="og:site_name" content="Tính Bê Tông Online" />
+
+  <!-- Schema Markup (JSON-LD) for WebApplication -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Công cụ Tính Khối Lượng Bê Tông",
+    "description": "Ứng dụng web tự động tính toán khối lượng và thể tích bê tông cần đổ cho các cấu kiện móng, sàn, sảnh và dầm nhà.",
+    "applicationCategory": "CalculatorApplication",
+    "operatingSystem": "Web",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "VND"
+    },
+    "inLanguage": "vi-VN"
+  }
+  </script>
+
+  <link rel="stylesheet" href="style.css" />
+  <!-- Preload fonts to improve PageSpeed score (SEO) -->
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap"></noscript>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏗️</text></svg>" />
+</head>
+<body>
+  <div class="app-container">
+
+    <!-- Header -->
+    <header class="app-header">
+      <div class="app-header__icon">🏗️</div>
+      <h1 class="app-header__title">Tính Khối Lượng Bê Tông</h1>
+      <p class="app-header__subtitle">Sàn, Sảnh & Dầm — Tính nhanh khối lượng bê tông cần đổ cho 1 tầng</p>
+      <button class="btn btn--print" id="btn-print" type="button">🖨️ In / Xuất PDF</button>
+    </header>
+
+    <!-- Main Grid -->
+    <div class="main-grid">
+
+      <!-- ===== SLAB SECTION ===== -->
+      <section class="card" id="slab-section">
+        <div class="card__header">
+          <div class="card__icon card__icon--slab">📐</div>
+          <h2 class="card__title">Thông Tin Sàn</h2>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="slab-length">Chiều dài sàn</label>
+          <div class="form-input-wrapper">
+            <input type="number" id="slab-length" class="form-input" placeholder="0.00" step="0.01" min="0" />
+            <button type="button" class="unit-toggle" data-unit="m" title="Nhấn để đổi đơn vị">m</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="slab-width">Chiều rộng sàn</label>
+          <div class="form-input-wrapper">
+            <input type="number" id="slab-width" class="form-input" placeholder="0.00" step="0.01" min="0" />
+            <button type="button" class="unit-toggle" data-unit="m" title="Nhấn để đổi đơn vị">m</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="slab-thickness">Chiều dày sàn</label>
+          <div class="form-input-wrapper">
+            <input type="number" id="slab-thickness" class="form-input" placeholder="10" step="1" min="0" value="10" />
+            <button type="button" class="unit-toggle" data-unit="cm" title="Nhấn để đổi đơn vị">cm</button>
+          </div>
+        </div>
+
+        <div class="slab-stats">
+          <div class="slab-stat">
+            <div class="slab-stat__label">Diện tích</div>
+            <div class="slab-stat__value" id="slab-area">0 m²</div>
+          </div>
+          <div class="slab-stat">
+            <div class="slab-stat__label">Thể tích sàn</div>
+            <div class="slab-stat__value" id="slab-volume">0 m³</div>
+          </div>
+        </div>
+
+        <!-- Slab formula -->
+        <div class="formula" id="slab-formula">V = Dài × Rộng × Dày</div>
+      </section>
+
+      <!-- ===== LOBBY SECTION ===== -->
+      <section class="card lobby-section" id="lobby-section">
+        <div class="card__header">
+          <div class="card__icon card__icon--lobby">🏛️</div>
+          <h2 class="card__title">Danh Sách Sảnh</h2>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="beam-toolbar">
+          <button class="btn btn--lobby" id="btn-add-lobby" type="button">
+            ＋ Thêm sảnh
+          </button>
+          <button class="btn btn--outline" id="btn-clear-lobbies" type="button">
+            🗑️ Xóa tất cả
+          </button>
+        </div>
+
+        <!-- Lobby table -->
+        <div class="beam-table-container">
+          <table class="beam-table" id="lobby-table">
+            <thead>
+              <tr>
+                <th>Tên sảnh</th>
+                <th>Dài</th>
+                <th>Rộng</th>
+                <th>Dày</th>
+                <th>V (m³)</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="lobby-tbody">
+              <!-- Lobby rows inserted by JS -->
+            </tbody>
+          </table>
+
+          <!-- Empty state -->
+          <div class="beam-empty" id="lobby-empty">
+            <div class="beam-empty__icon">🏛️</div>
+            <div class="beam-empty__text">Chưa có sảnh nào. Nhấn <strong>"Thêm sảnh"</strong> để bắt đầu.</div>
+          </div>
+        </div>
+
+        <!-- Lobby total -->
+        <div class="slab-stats" id="lobby-stats" style="display: none;">
+          <div class="slab-stat">
+            <div class="slab-stat__label">Tổng DT sảnh</div>
+            <div class="slab-stat__value" id="lobby-area" style="color: var(--lobby);">0 m²</div>
+          </div>
+          <div class="slab-stat">
+            <div class="slab-stat__label">Tổng V sảnh</div>
+            <div class="slab-stat__value" id="lobby-volume" style="color: var(--lobby);">0 m³</div>
+          </div>
+        </div>
+
+        <!-- Lobby formulas -->
+        <div class="formula-list" id="lobby-formulas"></div>
+      </section>
+
+      <!-- ===== BEAM SECTION ===== -->
+      <section class="card beam-section" id="beam-section">
+        <div class="card__header">
+          <div class="card__icon card__icon--beam">🔩</div>
+          <h2 class="card__title">Danh Sách Dầm</h2>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="beam-toolbar">
+          <button class="btn btn--primary" id="btn-add-beam" type="button">
+            ＋ Thêm dầm
+          </button>
+
+          <div class="preset-dropdown" id="preset-dropdown">
+            <button class="btn btn--outline" id="btn-preset" type="button">
+              ⚡ Kích thước phổ biến
+            </button>
+            <div class="preset-menu" id="preset-menu">
+              <div class="preset-menu__title">Dầm chính</div>
+              <button class="preset-item" data-type="Chính" data-w="0.20" data-h="0.40" type="button">
+                <span>Dầm chính</span>
+                <span class="preset-item__size">200×400</span>
+              </button>
+              <button class="preset-item" data-type="Chính" data-w="0.20" data-h="0.50" type="button">
+                <span>Dầm chính</span>
+                <span class="preset-item__size">200×500</span>
+              </button>
+              <button class="preset-item" data-type="Chính" data-w="0.25" data-h="0.50" type="button">
+                <span>Dầm chính</span>
+                <span class="preset-item__size">250×500</span>
+              </button>
+              <button class="preset-item" data-type="Chính" data-w="0.30" data-h="0.60" type="button">
+                <span>Dầm chính</span>
+                <span class="preset-item__size">300×600</span>
+              </button>
+              <div class="preset-menu__title" style="margin-top: 0.25rem;">Dầm phụ</div>
+              <button class="preset-item" data-type="Phụ" data-w="0.15" data-h="0.30" type="button">
+                <span>Dầm phụ</span>
+                <span class="preset-item__size">150×300</span>
+              </button>
+              <button class="preset-item" data-type="Phụ" data-w="0.20" data-h="0.30" type="button">
+                <span>Dầm phụ</span>
+                <span class="preset-item__size">200×300</span>
+              </button>
+              <button class="preset-item" data-type="Phụ" data-w="0.20" data-h="0.35" type="button">
+                <span>Dầm phụ</span>
+                <span class="preset-item__size">200×350</span>
+              </button>
+            </div>
+          </div>
+
+          <button class="btn btn--outline" id="btn-clear-all" type="button">
+            🗑️ Xóa tất cả
+          </button>
+        </div>
+
+        <!-- Beam table -->
+        <div class="beam-table-container">
+          <table class="beam-table" id="beam-table">
+            <thead>
+              <tr>
+                <th>Tên dầm</th>
+                <th>Loại</th>
+                <th>Dài</th>
+                <th>Rộng</th>
+                <th>Cao</th>
+                <th>SL</th>
+                <th title="Trừ chiều dày sàn khỏi chiều cao dầm">Trừ sàn</th>
+                <th>V (m³)</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="beam-tbody">
+              <!-- Beam rows inserted by JS -->
+            </tbody>
+          </table>
+
+          <!-- Empty state -->
+          <div class="beam-empty" id="beam-empty">
+            <div class="beam-empty__icon">📏</div>
+            <div class="beam-empty__text">Chưa có dầm nào. Nhấn <strong>"Thêm dầm"</strong> hoặc chọn kích thước phổ biến.</div>
+          </div>
+        </div>
+
+        <!-- Beam formulas -->
+        <div class="formula-list" id="beam-formulas"></div>
+      </section>
+
+      <!-- ===== RESULTS SECTION ===== -->
+      <section class="card results-section" id="results-section">
+        <div class="card__header">
+          <div class="card__icon card__icon--result">📊</div>
+          <h2 class="card__title">Kết Quả Tổng Hợp</h2>
+        </div>
+
+        <div class="results-layout-horizontal">
+          <!-- Main Total Box -->
+          <div class="results-layout-horizontal__main">
+            <div class="result-total" id="result-total">
+              <div class="result-total__label">Tổng Lý Thuyết (Chưa trừ sắt)</div>
+              <div class="result-total__volume result-total__volume--sm" id="result-total-vol">0 <span class="result-total__unit">m³</span></div>
+              
+              <div class="wastage-control">
+                <label for="wastage-input">Hao hụt dự kiến:</label>
+                <div class="wastage-input-group">
+                  <input type="number" id="wastage-input" value="3" min="0" max="20" step="0.5" title="Hệ số hao hụt cốp pha, bơm, v.v." />
+                  <span class="wastage-percent">%</span>
+                </div>
+              </div>
+
+              <div class="result-total__divider"></div>
+
+              <div class="result-total__label" style="color: #fcd34d; font-size: 0.875rem;">Đề Xuất Đặt Bê Tông</div>
+              <div class="result-total__volume" id="result-order-vol" style="color: #fbbf24; text-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);">0 <span class="result-total__unit" style="color: rgba(251, 191, 36, 0.8);">m³</span></div>
+
+              <div class="result-total__mass">
+                Khối lượng ≈ <span id="result-total-mass">0</span> kg (<span id="result-total-ton">0</span> tấn)
+              </div>
+            </div>
+          </div>
+          
+          <!-- Details -->
+          <div class="results-layout-horizontal__side">
+            <!-- Slab vs Lobby vs Beam breakdown -->
+            <div class="results-grid results-grid--3" style="margin-bottom: 0;">
+              <div class="result-card result-card--slab">
+                <div class="result-card__label">Thể tích sàn</div>
+                <div class="result-card__value" id="result-slab-vol">0 m³</div>
+              </div>
+              <div class="result-card result-card--lobby">
+                <div class="result-card__label">Thể tích sảnh</div>
+                <div class="result-card__value" id="result-lobby-vol">0 m³</div>
+              </div>
+              <div class="result-card result-card--beam">
+                <div class="result-card__label">Thể tích dầm</div>
+                <div class="result-card__value" id="result-beam-vol">0 m³</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Breakdown bar -->
+        <div class="breakdown-bar" style="margin-top: var(--space-xl);">
+          <div class="breakdown-bar__label">Tỉ lệ sàn / sảnh / dầm</div>
+          <div class="breakdown-bar__track">
+            <div class="breakdown-bar__slab" id="bar-slab" style="width: 34%;"></div>
+            <div class="breakdown-bar__lobby" id="bar-lobby" style="width: 33%;"></div>
+            <div class="breakdown-bar__beam" id="bar-beam" style="width: 33%;"></div>
+          </div>
+          <div class="breakdown-legend">
+            <div class="breakdown-legend__item">
+              <div class="breakdown-legend__dot breakdown-legend__dot--slab"></div>
+              <span>Sàn <span id="bar-slab-pct">0%</span></span>
+            </div>
+            <div class="breakdown-legend__item">
+              <div class="breakdown-legend__dot breakdown-legend__dot--lobby"></div>
+              <span>Sảnh <span id="bar-lobby-pct">0%</span></span>
+            </div>
+            <div class="breakdown-legend__item">
+              <div class="breakdown-legend__dot breakdown-legend__dot--beam"></div>
+              <span>Dầm <span id="bar-beam-pct">0%</span></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /main-grid -->
+
+    <!-- Summary cards -->
+    <section class="card summary-section" id="summary-section" style="margin-top: var(--space-xl);">
+      <div class="summary-grid">
+        <div class="summary-card">
+          <div class="summary-card__icon">📐</div>
+          <div class="summary-card__value summary-card__value--accent" id="sum-area">0</div>
+          <div class="summary-card__label">DT Sàn (m²)</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-card__icon">🏛️</div>
+          <div class="summary-card__value summary-card__value--lobby" id="sum-lobby-area">0</div>
+          <div class="summary-card__label">DT Sảnh (m²)</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-card__icon">🔩</div>
+          <div class="summary-card__value summary-card__value--info" id="sum-beam-count">0</div>
+          <div class="summary-card__label">Số lượng dầm</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-card__icon">📦</div>
+          <div class="summary-card__value summary-card__value--success" id="sum-total-vol">0</div>
+          <div class="summary-card__label">Tổng BT (m³)</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-card__icon">⚖️</div>
+          <div class="summary-card__value" id="sum-total-ton">0</div>
+          <div class="summary-card__label">Khối lượng (tấn)</div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="app-footer">
+      Khối lượng riêng bê tông: 2,400 kg/m³ · Nhấn vào đơn vị (m/cm) để chuyển đổi · Dữ liệu lưu tự động
+    </footer>
+
+  </div><!-- /app-container -->
+
+  <!-- Toast notification -->
+  <div class="toast" id="toast">
+    <span id="toast-text"></span>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
