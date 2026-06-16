@@ -506,13 +506,208 @@
     if (del) { delBeam(parseInt(del.closest('tr').dataset.id)); toast('🗑️ Đã xóa dầm'); }
   });
 
-  // ── Print ──
-  const btnPrint = $('btn-print');
-  if (btnPrint) {
-    btnPrint.addEventListener('click', () => {
-      window.print();
-    });
+  // ── Export Report ──
+  function exportReport() {
+    const slab = getSlabData();
+    const lt = lobbyTotals();
+    const bv = beamTotalVol(slab.t);
+    const tv = slab.vol + lt.vol + bv;
+    const wastage = parseFloat(dom.wastageInput.value) || 0;
+    const orderVol = tv * (1 + wastage / 100);
+    const mass = tv * DENSITY;
+    const ton = mass / 1000;
+
+    // Read slab display inputs
+    const slLv = rawVal(dom.slabL), slWv = rawVal(dom.slabW), slTv = rawVal(dom.slabT);
+    const slLu = dom.slabL.parentElement.querySelector('.unit-toggle')?.dataset.unit || 'm';
+    const slWu = dom.slabW.parentElement.querySelector('.unit-toggle')?.dataset.unit || 'm';
+    const slTu = dom.slabT.parentElement.querySelector('.unit-toggle')?.dataset.unit || 'cm';
+
+    // ── Section helpers ──
+    function tag(text, cls) { return `<span class="tag${cls ? ' tag--'+cls : ''}">${escHtml(text)}</span>`; }
+    function fmtV(v) { return fmt(v, 3) + ' m³'; }
+
+    // ── Slab ──
+    const needConvS = slLu !== 'm' || slWu !== 'm' || slTu !== 'm';
+    const slabSection = `
+<section>
+  <h2>I. SÀN</h2>
+  <div class="cline"><span class="lbl">Công thức:</span><span class="eq">V<sub>sàn</sub> = Dài × Rộng × Dày</span></div>
+  <div class="cline"><span class="lbl">Thay số:</span><span class="eq">V<sub>sàn</sub> = ${fmtShort(slLv)}${slLu} × ${fmtShort(slWv)}${slWu} × ${fmtShort(slTv)}${slTu}</span></div>
+  ${needConvS ? `<div class="cline muted"><span class="lbl">→ m:</span><span class="eq">${fmtShort(slab.l)}m × ${fmtShort(slab.w)}m × ${fmtShort(slab.t)}m</span></div>` : ''}
+  <div class="cline result"><span class="lbl">Kết quả:</span><span class="eq"><b>V<sub>sàn</sub> = ${fmtV(slab.vol)}</b></span></div>
+</section>`;
+
+    // ── Lobbies ──
+    let secN = 2, lobbySection = '';
+    if (lobbies.length > 0) {
+      const roman = ['I','II','III','IV','V'][secN - 1];
+      const rows = lobbies.map(lb => {
+        const lu = lb.lengthUnit||'m', wu = lb.widthUnit||'m', tu = lb.thicknessUnit||'cm';
+        const tu2 = lb.thickness2Unit||'cm';
+        const tStr = lb.twoLayer
+          ? `(${fmtShort(lb.thickness||0)}${tu} + ${fmtShort(lb.thickness2||0)}${tu2})`
+          : `${fmtShort(lb.thickness||0)}${tu}`;
+        const hasConv = lu==='cm'||wu==='cm'||tu==='cm'||(lb.twoLayer && tu2==='cm');
+        const lm = lobbyMeters(lb,'length'), wm = lobbyMeters(lb,'width');
+        const tm = lobbyMeters(lb,'thickness') + (lb.twoLayer ? lobbyMeters(lb,'thickness2') : 0);
+        const conv = hasConv ? `<br><span class="muted">→ ${fmtShort(lm)}m × ${fmtShort(wm)}m × ${fmtShort(tm)}m</span>` : '';
+        return `<tr>
+          <td>${escHtml(lb.name)}${lb.twoLayer ? '<br>'+tag('2 lớp') : ''}</td>
+          <td class="code">${fmtShort(lb.length||0)}${lu} × ${fmtShort(lb.width||0)}${wu} × ${tStr}${conv}</td>
+          <td class="r">${fmtV(lobbyVol(lb))}</td></tr>`;
+      }).join('');
+      lobbySection = `
+<section>
+  <h2>${roman}. SẢNH</h2>
+  <table>
+    <thead><tr><th>Tên sảnh</th><th>Công thức: V = Dài × Rộng × Dày</th><th>Thể tích</th></tr></thead>
+    <tbody>${rows}</tbody>
+    <tfoot><tr><td colspan="2">Tổng thể tích sảnh</td><td class="r"><b>${fmtV(lt.vol)}</b></td></tr></tfoot>
+  </table>
+</section>`;
+      secN++;
+    }
+
+    // ── Beams ──
+    let beamSection = '';
+    if (beams.length > 0) {
+      const roman = ['I','II','III','IV','V'][secN - 1];
+      const slabNote = slTu !== 'm'
+        ? `${fmtShort(slTv)}${slTu} = ${fmtShort(slab.t)}m`
+        : `${fmtShort(slab.t)}m`;
+      const rows = beams.map(b => {
+        const lu = b.lengthUnit||'m', wu = b.widthUnit||'m', hu = b.heightUnit||'m';
+        const doSub = b.subtractSlab !== false;
+        const slabTInHU = hu === 'cm' ? slab.t * 100 : slab.t;
+        const hStr = doSub
+          ? `(${fmtShort(b.height||0)}${hu} − ${fmtShort(slabTInHU)}${hu})`
+          : `${fmtShort(b.height||0)}${hu}`;
+        const q = b.quantity || 1;
+        const hasConv = lu==='cm'||wu==='cm'||hu==='cm';
+        const lm = beamMeters(b,'length'), wm = beamMeters(b,'width'), hm = beamMeters(b,'height');
+        const effH = doSub ? Math.max(0, hm - slab.t) : hm;
+        const conv = hasConv ? `<br><span class="muted">→ ${fmtShort(lm)}m × ${fmtShort(wm)}m × ${fmtShort(effH)}m × ${q}</span>` : '';
+        const tags = [tag(b.type), doSub ? tag('Trừ sàn','info') : ''].filter(Boolean).join(' ');
+        return `<tr>
+          <td>${escHtml(b.name)}<br>${tags}</td>
+          <td class="code">${fmtShort(b.length||0)}${lu} × ${fmtShort(b.width||0)}${wu} × ${hStr} × ${q}${conv}</td>
+          <td class="r">${fmtV(beamVol(b, slab.t))}</td></tr>`;
+      }).join('');
+      const totalQ = beams.reduce((s, b) => s + (b.quantity || 1), 0);
+      beamSection = `
+<section>
+  <h2>${roman}. DẦM</h2>
+  <p class="note">* "Trừ sàn": trừ chiều dày sàn (${slabNote}) khỏi chiều cao dầm để tránh tính trùng phần giao với sàn.</p>
+  <table>
+    <thead><tr><th>Tên dầm</th><th>Công thức: V = Dài × Rộng × Cao × SL</th><th>Thể tích</th></tr></thead>
+    <tbody>${rows}</tbody>
+    <tfoot><tr><td colspan="2">Tổng thể tích dầm (${totalQ} dầm)</td><td class="r"><b>${fmtV(bv)}</b></td></tr></tfoot>
+  </table>
+</section>`;
+      secN++;
+    }
+
+    // ── Summary ──
+    const roman = ['I','II','III','IV','V'][secN - 1];
+    const totalQ = beams.reduce((s, b) => s + (b.quantity || 1), 0);
+    const summarySection = `
+<section class="summary">
+  <h2>${roman}. KẾT QUẢ TỔNG HỢP</h2>
+  <table>
+    <tbody>
+      <tr><td>Thể tích sàn</td><td class="r">${fmtV(slab.vol)}</td></tr>
+      ${lobbies.length > 0 ? `<tr><td>Thể tích sảnh (${lobbies.length} sảnh)</td><td class="r">${fmtV(lt.vol)}</td></tr>` : ''}
+      ${beams.length > 0 ? `<tr><td>Thể tích dầm (${totalQ} dầm)</td><td class="r">${fmtV(bv)}</td></tr>` : ''}
+      <tr class="tr-sub"><td colspan="2"><i>Ghi chú: Thể tích lý thuyết, chưa trừ thể tích cốt thép.</i></td></tr>
+      <tr class="tr-total"><td><b>Tổng thể tích lý thuyết</b></td><td class="r"><b>${fmtV(tv)}</b></td></tr>
+      <tr class="tr-gap"><td colspan="2"></td></tr>
+      <tr><td>Khối lượng riêng bê tông</td><td class="r">2.400 kg/m³</td></tr>
+      <tr><td>${fmt(tv, 3)} m³ × 2.400 kg/m³</td><td class="r">${fmt(mass, 0)} kg = ${fmt(ton, 2)} tấn</td></tr>
+      <tr class="tr-gap"><td colspan="2"></td></tr>
+      <tr><td>Hao hụt dự kiến (cốp pha, bơm bê tông, v.v.)</td><td class="r">${wastage}%</td></tr>
+      <tr><td>${fmt(tv, 3)} m³ × (1 + ${wastage}/100)</td><td class="r">${fmt(orderVol, 3)} m³</td></tr>
+      <tr class="tr-order"><td><b>ĐỀ XUẤT ĐẶT BÊ TÔNG</b></td><td class="r"><b>${fmt(orderVol, 1)} m³</b></td></tr>
+    </tbody>
+  </table>
+</section>`;
+
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+    const html = `<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Bảng Tính Khối Lượng Bê Tông</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Times New Roman',Times,serif;font-size:12pt;color:#111;padding:18mm 18mm 15mm 25mm;line-height:1.55}
+h1{text-align:center;font-size:16pt;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px}
+.meta{text-align:center;font-size:10pt;color:#555;margin-bottom:20px;padding-bottom:10px;border-bottom:2px solid #111}
+section{margin-bottom:20px}
+h2{font-size:13pt;border-bottom:1px solid #666;padding-bottom:3px;margin-bottom:10px}
+.cline{display:flex;gap:12px;margin:3px 0;align-items:baseline}
+.lbl{min-width:88px;color:#555;font-size:10.5pt;flex-shrink:0}
+.eq{font-family:'Courier New',monospace;font-size:11pt}
+.cline.muted .lbl,.cline.muted .eq{color:#888}
+.cline.result .eq{font-size:12pt}
+.muted{color:#888;font-size:9.5pt}
+.note{font-size:10pt;color:#555;font-style:italic;margin-bottom:8px}
+table{width:100%;border-collapse:collapse;font-size:11pt;margin-top:4px}
+th{background:#e0e0e0;font-weight:bold;padding:5px 8px;border:1px solid #888;text-align:left}
+td{padding:5px 8px;border:1px solid #ccc;vertical-align:middle}
+tfoot td{background:#efefef;font-weight:bold;border:1px solid #888}
+.code{font-family:'Courier New',monospace;font-size:9.5pt;line-height:1.6}
+.r{text-align:right;white-space:nowrap}
+.tag{display:inline-block;font-size:8.5pt;background:#e8e8e8;border:1px solid #ccc;padding:0 4px;border-radius:2px;font-family:sans-serif}
+.tag--info{background:#dbeafe;border-color:#93c5fd}
+.summary table{font-size:12pt}
+.tr-total td{background:#f0f0f0;font-size:13pt;border-top:2px solid #888;border-bottom:2px solid #888}
+.tr-order td{background:#e8f5e9;font-size:14pt;color:#1b5e20;border:2px solid #4caf50;font-weight:bold}
+.tr-gap td{padding:4px;border:none;background:transparent}
+.tr-sub td{font-size:9.5pt;color:#666;border:none;padding:2px 8px}
+.signature{margin-top:36px;display:flex;justify-content:space-around}
+.sign-block{text-align:center;width:42%}
+.sign-block .title{font-weight:bold;margin-bottom:4px}
+.sign-block .hint{font-size:10pt;color:#555;font-style:italic;margin-bottom:52px}
+.sign-block .line{border-top:1px solid #333;padding-top:4px;font-size:10pt;color:#555}
+.btn-print{display:block;margin:24px auto 0;padding:10px 32px;background:#1565c0;color:#fff;border:none;border-radius:6px;font-size:13pt;cursor:pointer;font-family:sans-serif}
+@media print{.btn-print{display:none!important}body{padding:10mm 15mm 10mm 20mm}section{page-break-inside:avoid}}
+</style>
+</head>
+<body>
+<h1>Bảng Tính Khối Lượng Bê Tông</h1>
+<p class="meta">Ngày lập: ${dateStr} &nbsp;|&nbsp; Công cụ: Tính Khối Lượng Bê Tông Online</p>
+${slabSection}
+${lobbySection}
+${beamSection}
+${summarySection}
+<div class="signature">
+  <div class="sign-block">
+    <div class="title">Người lập bảng tính</div>
+    <div class="hint">(Ký và ghi rõ họ tên)</div>
+    <div class="line">&nbsp;</div>
+  </div>
+  <div class="sign-block">
+    <div class="title">Nhà thầu xác nhận</div>
+    <div class="hint">(Ký và ghi rõ họ tên)</div>
+    <div class="line">&nbsp;</div>
+  </div>
+</div>
+<button class="btn-print" onclick="window.print()">🖨️ In / Lưu PDF</button>
+</body>
+</html>`;
+
+    const blob = new Blob([html], { type: 'text/html; charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const win = window.open(url, '_blank', 'width=900,height=750');
+    if (!win) { URL.revokeObjectURL(url); toast('❌ Trình duyệt chặn popup. Hãy cho phép popup rồi thử lại.'); return; }
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
   }
+
+  const btnPrint = $('btn-print');
+  if (btnPrint) btnPrint.addEventListener('click', exportReport);
 
   // ── Init ──
   if (!loadData()) updateResults();
