@@ -94,9 +94,8 @@
   function lobbyVol(lb) {
     const l = lobbyMeters(lb, 'length');
     const w = lobbyMeters(lb, 'width');
-    const t1 = lobbyMeters(lb, 'thickness');
-    const t2 = lb.twoLayer ? lobbyMeters(lb, 'thickness2') : 0;
-    return l * w * (t1 + t2);
+    const t = lobbyMeters(lb, 'thickness');
+    return l * w * t * (lb.twoLayer ? 2 : 1);
   }
   function lobbyMeters(lb, field) {
     const v = lb[field] || 0;
@@ -135,21 +134,17 @@
       <button type="button" class="unit-toggle--inline unit-toggle" data-unit="${unit}" data-field="${field}"
         title="Nhấn đổi đơn vị">${unit}</button>
     </div></td>`;
-    const t2Cell = lb.twoLayer
-      ? mkCell('thickness2', lb.thickness2, lb.thickness2Unit || 'cm', '0', '65px')
-      : `<td style="text-align:center;color:var(--text-muted);">—</td>`;
     tr.innerHTML = `<td><input type="text" class="beam-input beam-input--name" value="${escHtml(lb.name)}"
       data-field="name" placeholder="Sảnh 1"/></td>
       ${mkCell('length', lb.length, lb.lengthUnit || 'm', '0.00')}
       ${mkCell('width', lb.width, lb.widthUnit || 'm', '0.00')}
       ${mkCell('thickness', lb.thickness, lb.thicknessUnit || 'cm', '10', '65px')}
       <td>
-        <label class="beam-checkbox-wrapper" title="Đổ 2 lớp bê tông">
+        <label class="beam-checkbox-wrapper" title="Đổ 2 lớp bê tông (× 2 chiều dày)">
           <input type="checkbox" class="beam-checkbox" data-field="twoLayer" ${lb.twoLayer ? 'checked' : ''} />
           <span class="beam-checkbox-custom"></span>
         </label>
       </td>
-      ${t2Cell}
       <td><span class="lobby-volume-cell">${fmt(lobbyVol(lb))}</span></td>
       <td><button class="btn btn--danger btn--icon" data-action="del-lobby" type="button">✕</button></td>`;
     return tr;
@@ -231,7 +226,7 @@
       const l = lb.length || 0, w = lb.width || 0, t = lb.thickness || 0;
       const lu = lb.lengthUnit || 'm', wu = lb.widthUnit || 'm', tu = lb.thicknessUnit || 'cm';
       const tStr = lb.twoLayer
-        ? `(${fmtShort(t)}${tu} + ${fmtShort(lb.thickness2 || 0)}${lb.thickness2Unit || 'cm'})`
+        ? `${fmtShort(t)}${tu} × 2`
         : `${fmtShort(t)}${tu}`;
       return `<div class="formula-item"><strong>${escHtml(lb.name)}:</strong> V = ${fmtShort(l)}${lu} × ${fmtShort(w)}${wu} × ${tStr} = <strong>${fmt(v)} m³</strong></div>`;
     }).join('');
@@ -321,7 +316,7 @@
       length: o.length || 0, lengthUnit: o.lengthUnit || 'm',
       width: o.width || 0, widthUnit: o.widthUnit || 'm',
       thickness: o.thickness || 10, thicknessUnit: o.thicknessUnit || 'cm',
-      twoLayer: o.twoLayer || false, thickness2: o.thickness2 || 0, thickness2Unit: o.thickness2Unit || 'cm' };
+      twoLayer: o.twoLayer || false };
     lobbies.push(lb);
     dom.lobbyTb.appendChild(mkLobbyRow(lb));
     togLobbyEmpty(); updateResults();
@@ -556,13 +551,12 @@
       const roman = ['I','II','III','IV','V'][secN - 1];
       const rows = lobbies.map(lb => {
         const lu = lb.lengthUnit||'m', wu = lb.widthUnit||'m', tu = lb.thicknessUnit||'cm';
-        const tu2 = lb.thickness2Unit||'cm';
         const tStr = lb.twoLayer
-          ? `(${fmtShort(lb.thickness||0)}${tu} + ${fmtShort(lb.thickness2||0)}${tu2})`
+          ? `${fmtShort(lb.thickness||0)}${tu} × 2`
           : `${fmtShort(lb.thickness||0)}${tu}`;
-        const hasConv = lu==='cm'||wu==='cm'||tu==='cm'||(lb.twoLayer && tu2==='cm');
+        const hasConv = lu==='cm'||wu==='cm'||tu==='cm';
         const lm = lobbyMeters(lb,'length'), wm = lobbyMeters(lb,'width');
-        const tm = lobbyMeters(lb,'thickness') + (lb.twoLayer ? lobbyMeters(lb,'thickness2') : 0);
+        const tm = lobbyMeters(lb,'thickness') * (lb.twoLayer ? 2 : 1);
         const conv = hasConv ? `<br><span class="muted">→ ${fmtShort(lm)}m × ${fmtShort(wm)}m × ${fmtShort(tm)}m</span>` : '';
         return `<tr>
           <td>${escHtml(lb.name)}${lb.twoLayer ? '<br>'+tag('2 lớp') : ''}</td>
