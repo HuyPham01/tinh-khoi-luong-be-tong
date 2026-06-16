@@ -330,13 +330,14 @@
     return lb;
   }
   function delLobby(id) {
+    lobbies = lobbies.filter(l => l.id !== id);
+    togLobbyEmpty(); updateResults();
     const row = dom.lobbyTb.querySelector(`tr[data-id="${id}"]`);
     if (!row) return;
     row.classList.add('beam-row-exit');
-    row.addEventListener('animationend', () => {
-      row.remove(); lobbies = lobbies.filter(l => l.id !== id);
-      togLobbyEmpty(); updateResults();
-    });
+    const remove = () => row.remove();
+    row.addEventListener('animationend', remove, { once: true });
+    setTimeout(remove, 350);
   }
   function addBeam(o = {}) {
     const b = { id: ++beamId, name: o.name || `D${beamId}`, type: o.type || 'Chính',
@@ -352,13 +353,14 @@
     return b;
   }
   function delBeam(id) {
+    beams = beams.filter(b => b.id !== id);
+    togBeamEmpty(); updateResults();
     const row = dom.beamTb.querySelector(`tr[data-id="${id}"]`);
     if (!row) return;
     row.classList.add('beam-row-exit');
-    row.addEventListener('animationend', () => {
-      row.remove(); beams = beams.filter(b => b.id !== id);
-      togBeamEmpty(); updateResults();
-    });
+    const remove = () => row.remove();
+    row.addEventListener('animationend', remove, { once: true });
+    setTimeout(remove, 350);
   }
 
   // ── Persistence ──
@@ -447,8 +449,13 @@
       const lb = lobbies.find(l => l.id === parseInt(row?.dataset.id));
       if (lb) {
         const field = unitBtn.dataset.field;
-        // Global handler runs first and flips dataset.unit, so read the NEW value
-        setTimeout(() => { lb[field + 'Unit'] = unitBtn.dataset.unit; updateResults(); }, 0);
+        // Global handler toggles unit + converts input.value; sync both to data model
+        setTimeout(() => {
+          const inp = unitBtn.closest('.input-with-unit')?.querySelector('input[type="number"]');
+          if (inp) lb[field] = parseFloat(inp.value) || 0;
+          lb[field + 'Unit'] = unitBtn.dataset.unit;
+          updateResults();
+        }, 0);
       }
       return;
     }
@@ -498,7 +505,12 @@
       const b = beams.find(x => x.id === parseInt(row?.dataset.id));
       if (b) {
         const f = unitBtn.dataset.field;
-        setTimeout(() => { b[f + 'Unit'] = unitBtn.dataset.unit; updateResults(); }, 0);
+        setTimeout(() => {
+          const inp = unitBtn.closest('.input-with-unit')?.querySelector('input[type="number"]');
+          if (inp) b[f] = parseFloat(inp.value) || 0;
+          b[f + 'Unit'] = unitBtn.dataset.unit;
+          updateResults();
+        }, 0);
       }
       return;
     }
