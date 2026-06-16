@@ -58,14 +58,6 @@
     if (!btn) return v;
     return btn.dataset.unit === 'cm' ? v / 100 : v;
   }
-  // For table cells with .input-with-unit wrapper
-  function getMetersFromCell(inputEl) {
-    const v = parseFloat(inputEl.value) || 0;
-    const btn = inputEl.closest('.input-with-unit')?.querySelector('.unit-toggle--inline');
-    if (!btn) return v;
-    return btn.dataset.unit === 'cm' ? v / 100 : v;
-  }
-
   function toggleUnit(btn, input) {
     const oldUnit = btn.dataset.unit;
     const val = parseFloat(input.value);
@@ -233,17 +225,16 @@
 
   function updateBeamFormulas(slabT) {
     if (beams.length === 0) { dom.beamFormulas.innerHTML = ''; return; }
-    // Show slab thickness in its current display unit
-    const slabTVal = rawVal(dom.slabT);
-    const slabTUnit = dom.slabT.parentElement.querySelector('.unit-toggle')?.dataset.unit || 'cm';
     dom.beamFormulas.innerHTML = beams.map(b => {
       const v = beamVol(b, slabT);
       const l = b.length || 0, w = b.width || 0, h = b.height || 0, q = b.quantity || 1;
       const lu = b.lengthUnit || 'm', wu = b.widthUnit || 'm', hu = b.heightUnit || 'm';
-      
+
       const doSub = b.subtractSlab !== false;
-      const hStr = doSub ? `(${fmtShort(h)}${hu} − ${fmtShort(slabTVal)}${slabTUnit})` : `${fmtShort(h)}${hu}`;
-      
+      // Convert slabT (meters) to same unit as beam height for consistent display
+      const slabTDisplay = hu === 'cm' ? slabT * 100 : slabT;
+      const hStr = doSub ? `(${fmtShort(h)}${hu} − ${fmtShort(slabTDisplay)}${hu})` : `${fmtShort(h)}${hu}`;
+
       return `<div class="formula-item formula-item--beam"><strong>${escHtml(b.name)}:</strong> V = ${fmtShort(l)}${lu} × ${fmtShort(w)}${wu} × ${hStr} × ${q} = <strong>${fmt(v)} m³</strong></div>`;
     }).join('');
   }
