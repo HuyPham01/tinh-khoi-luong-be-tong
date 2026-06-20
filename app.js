@@ -410,7 +410,8 @@
 
   // ── Events ──
   [dom.slabL, dom.slabW, dom.slabT, dom.wastageInput].forEach(i => i.addEventListener('input', updateResults));
-  [dom.grade, dom.slump].forEach(s => s.addEventListener('change', saveData));
+  dom.grade.addEventListener('change', saveData);
+  dom.slump.addEventListener('input', saveData);
 
   dom.btnAddLobby.addEventListener('click', () => { addLobby(); toast('✅ Đã thêm sảnh mới'); });
   dom.btnClrLobby.addEventListener('click', () => {
