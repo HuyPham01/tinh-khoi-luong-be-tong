@@ -400,6 +400,84 @@ body::before {
   color: var(--accent);
 }
 
+/* ===== CONCRETE INFO BAR ===== */
+.concrete-info-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md) var(--space-xl);
+  margin-bottom: var(--space-xl);
+}
+
+.concrete-info-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.concrete-info-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.concrete-info-select {
+  background: var(--bg-input);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.375rem 1.75rem 0.375rem 0.625rem;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.concrete-info-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-light);
+}
+
+.concrete-info-sep {
+  width: 1px;
+  height: 24px;
+  background: var(--border-color);
+  flex-shrink: 0;
+}
+
+.concrete-info-note {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-left: auto;
+  font-style: italic;
+}
+
+@media (max-width: 767px) {
+  .concrete-info-bar {
+    padding: var(--space-md);
+  }
+  .concrete-info-sep,
+  .concrete-info-note {
+    display: none;
+  }
+}
+
 /* ===== LOBBY SECTION ===== */
 .lobby-section {
   grid-column: 1 / -1;

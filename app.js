@@ -28,6 +28,7 @@
     sumA: $('sum-area'), sumLA: $('sum-lobby-area'), sumBC: $('sum-beam-count'),
     sumTV: $('sum-total-vol'), sumTT: $('sum-total-ton'),
     toast: $('toast'), toastTxt: $('toast-text'),
+    grade: $('concrete-grade'), slump: $('concrete-slump'),
   };
 
   let beamId = 0, lobbyId = 0;
@@ -370,7 +371,9 @@
       localStorage.setItem(SKEY, JSON.stringify({
         slab: { l: rawVal(dom.slabL), w: rawVal(dom.slabW), t: rawVal(dom.slabT), units: slabUnits },
         lobbies, lobbyId, beams, beamId,
-        wastage: parseFloat(dom.wastageInput.value) || 0
+        wastage: parseFloat(dom.wastageInput.value) || 0,
+        grade: dom.grade.value,
+        slump: dom.slump.value,
       }));
     } catch(e) {}
   }
@@ -398,15 +401,16 @@
       if (Array.isArray(d.beams) && d.beams.length > 0) {
         beamId = d.beamId || 0; beams = d.beams; renderBeams();
       }
-      if (d.wastage !== undefined) {
-        dom.wastageInput.value = d.wastage;
-      }
+      if (d.wastage !== undefined) dom.wastageInput.value = d.wastage;
+      if (d.grade) dom.grade.value = d.grade;
+      if (d.slump) dom.slump.value = d.slump;
       updateResults(); return true;
     } catch(e) { return false; }
   }
 
   // ── Events ──
   [dom.slabL, dom.slabW, dom.slabT, dom.wastageInput].forEach(i => i.addEventListener('input', updateResults));
+  [dom.grade, dom.slump].forEach(s => s.addEventListener('change', saveData));
 
   dom.btnAddLobby.addEventListener('click', () => { addLobby(); toast('✅ Đã thêm sảnh mới'); });
   dom.btnClrLobby.addEventListener('click', () => {
@@ -530,6 +534,9 @@
     const slWu = dom.slabW.parentElement.querySelector('.unit-toggle')?.dataset.unit || 'm';
     const slTu = dom.slabT.parentElement.querySelector('.unit-toggle')?.dataset.unit || 'cm';
 
+    const grade = dom.grade.value;
+    const slump = dom.slump.value;
+
     // ── Section helpers ──
     function tag(text, cls) { return `<span class="tag${cls ? ' tag--'+cls : ''}">${escHtml(text)}</span>`; }
     function fmtV(v) { return fmt(v, 3) + ' m³'; }
@@ -633,7 +640,10 @@
       <tr class="tr-gap"><td colspan="2"></td></tr>
       <tr><td>Hao hụt dự kiến (cốp pha, bơm bê tông, v.v.)</td><td class="r">${wastage}%</td></tr>
       <tr><td>${fmt(tv, 3)} m³ × (1 + ${wastage}/100)</td><td class="r">${fmt(orderVol, 3)} m³</td></tr>
-      <tr class="tr-order"><td><b>ĐỀ XUẤT ĐẶT BÊ TÔNG</b></td><td class="r"><b>${fmt(orderVol, 1)} m³</b></td></tr>
+      <tr class="tr-order"><td><b>ĐỀ XUẤT ĐẶT BÊ TÔNG${grade ? ` — ${escHtml(grade)}` : ''}</b></td><td class="r"><b>${fmt(orderVol, 1)} m³</b></td></tr>
+      ${(grade || slump) ? `<tr class="tr-gap"><td colspan="2"></td></tr>
+      ${grade ? `<tr class="tr-tech"><td>Mác bê tông yêu cầu</td><td class="r"><b>${escHtml(grade)}</b></td></tr>` : ''}
+      ${slump ? `<tr class="tr-tech"><td>Độ sụt yêu cầu</td><td class="r"><b>${escHtml(slump)}</b></td></tr>` : ''}` : ''}
     </tbody>
   </table>
 </section>`;
@@ -650,7 +660,11 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Times New Roman',Times,serif;font-size:12pt;color:#111;padding:18mm 18mm 15mm 25mm;line-height:1.55}
 h1{text-align:center;font-size:16pt;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px}
-.meta{text-align:center;font-size:10pt;color:#555;margin-bottom:20px;padding-bottom:10px;border-bottom:2px solid #111}
+.meta{text-align:center;font-size:10pt;color:#555;margin-bottom:12px;padding-bottom:10px;border-bottom:2px solid #111}
+.tech-req{display:flex;gap:48px;align-items:flex-start;background:#fff8e1;border:1.5px solid #f59e0b;border-radius:6px;padding:10px 18px;margin-bottom:18px}
+.tech-req__item{display:flex;flex-direction:column;gap:2px}
+.tech-req__lbl{font-size:8.5pt;color:#888;text-transform:uppercase;letter-spacing:.05em;font-family:sans-serif}
+.tech-req__val{font-size:16pt;font-weight:bold;color:#1a1a1a;font-family:sans-serif;line-height:1.2}
 section{margin-bottom:20px}
 h2{font-size:13pt;border-bottom:1px solid #666;padding-bottom:3px;margin-bottom:10px}
 .cline{display:flex;gap:12px;margin:3px 0;align-items:baseline}
@@ -671,6 +685,7 @@ tfoot td{background:#efefef;font-weight:bold;border:1px solid #888}
 .summary table{font-size:12pt}
 .tr-total td{background:#f0f0f0;font-size:13pt;border-top:2px solid #888;border-bottom:2px solid #888}
 .tr-order td{background:#e8f5e9;font-size:14pt;color:#1b5e20;border:2px solid #4caf50;font-weight:bold}
+.tr-tech td{background:#fff8e1;border:1px solid #f59e0b;font-size:11.5pt}
 .tr-gap td{padding:4px;border:none;background:transparent}
 .tr-sub td{font-size:9.5pt;color:#666;border:none;padding:2px 8px}
 .signature{margin-top:36px;display:flex;justify-content:space-around}
@@ -685,6 +700,10 @@ tfoot td{background:#efefef;font-weight:bold;border:1px solid #888}
 <body>
 <h1>Bảng Tính Khối Lượng Bê Tông</h1>
 <p class="meta">Ngày lập: ${dateStr} &nbsp;|&nbsp; Công cụ: Tính Khối Lượng Bê Tông Online</p>
+${(grade || slump) ? `<div class="tech-req">
+  ${grade ? `<div class="tech-req__item"><div class="tech-req__lbl">Mác bê tông</div><div class="tech-req__val">${escHtml(grade)}</div></div>` : ''}
+  ${slump ? `<div class="tech-req__item"><div class="tech-req__lbl">Độ sụt</div><div class="tech-req__val">${escHtml(slump)}</div></div>` : ''}
+</div>` : ''}
 ${slabSection}
 ${lobbySection}
 ${beamSection}
